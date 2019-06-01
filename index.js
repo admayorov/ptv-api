@@ -10,34 +10,37 @@ function generateSignature(request) {
     return HMAC(request, vars.key);
 }
 
-async function getDepartures(routeType, stopId, params = {}) {
-    let requestString = "/v3/departures";
-
-    // URI parameters:
-    requestString += "/route_type/" + routeType;
-    requestString += "/stop/" + stopId;
-
-    // Query parameters:
-    requestString += "?devId=" + vars.devId;
+async function makePTVrequest(baseString, params) {
+    baseString += "?devId=" + vars.devId;
     for (const [key, value] of Object.entries(params)) {
         // Some params (e.g. platform_numbers) take arrays as a value and each element 
         // must be inserted as a duplicate query parameter:
         if (Array.isArray(value)) {
             for (let entry of value) {
-                requestString += "&" + key + "=" + entry;
+                baseString += "&" + key + "=" + entry;
             }
         }
         else {
-            requestString += "&" + key + "=" + value;
+            baseString += "&" + key + "=" + value;
         }
     }
 
+    baseString += "&signature=" + generateSignature(baseString);
 
-    requestString += "&signature=" + generateSignature(requestString);
-
-    console.debug(vars.baseURL + requestString)
-    const response = await axios.get(vars.baseURL + requestString);
+    console.debug(vars.baseURL + baseString)
+    const response = await axios.get(vars.baseURL + baseString);
     return response.data;
+}
+
+async function getDepartures(routeType, stopId, params = {}) {
+    let baseString = "/v3/departures";
+
+    // URI parameters:
+    baseString += "/route_type/" + routeType;
+    baseString += "/stop/" + stopId;
+
+    const result = await makePTVrequest(baseString, params);
+    return result;
 }
 
 async function main() {
