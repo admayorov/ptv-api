@@ -43,12 +43,21 @@ async function getDepartures(routeType, stopId, params = {}) {
     return result;
 }
 
+async function getSearchResults(searchTerm, params={}) {
+    const baseString = "/v3/search/" + encodeURIComponent(searchTerm)
+    return makePTVrequest(baseString, params);
+}
+
 async function main() {
     const MODE_TRAIN = 0;
     const STOP_PARKDALE = 1154;
 
+    const search = await getSearchResults("Parkdale Station");
+    console.log(util.inspect(search));
+
+
     const departures = await getDepartures(MODE_TRAIN, STOP_PARKDALE, { max_results: 2, platform_numbers: [1, 2], });
-    console.log(util.inspect(departures))
+    console.log(util.inspect(departures));
 
 }
 
