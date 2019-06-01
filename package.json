@@ -1,0 +1,17 @@
+{
+  "name": "ptv-api",
+  "version": "1.0.0",
+  "description": "Wrapper for the PTV real-time API",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "ptv",
+    "public",
+    "transport",
+    "victoria"
+  ],
+  "author": "Andrey Mayorov",
+  "license": "MIT"
+}
