@@ -63,21 +63,6 @@ async function getSearchResults(searchTerm, params = {}) {
     return makePTVrequest(baseString, params);
 }
 
-async function main() {
-    const MODE_TRAIN = 0;
-    const STOP_PARKDALE = 1154;
-
-    const search = await getSearchResults("Parkdale Station");
-    console.log(util.inspect(search));
-
-    const departures = await getDepartures(
-        MODE_TRAIN, STOP_PARKDALE, null,
-        { max_results: 2, platform_numbers: [1, 2], }
-    );
-    console.log(util.inspect(departures));
-
-}
-
 async function getDirectionsForRoute(routeId, params = {}) {
     const baseString = `/v3/directions/route/${routeId}`
     return makePTVrequest(baseString, params);
@@ -131,7 +116,36 @@ async function getNearbyStops(latitude, longitude, params = {}) {
     return makePTVrequest(baseString, params);
 }
 
+// ----------------------------------------------
 
+async function test() {
+    const MODE_TRAIN = 0;
+    const STOP_PARKDALE = 1154;
+
+    const departures = await getDepartures(
+        MODE_TRAIN, STOP_PARKDALE, null,
+        { max_results: 5, platform_numbers: [1, 2], }
+    );
+    console.log(departures);
+    
+
+
+
+    // getDirectionsForRoute(routeId, params = { max_results: 5 })
+
+
+
+    
+    const search = await getSearchResults("Parkdale Station");
+    console.log(search);
+}
+
+async function main() {
+
+    await test()
+
+
+}
 
 
 main();
