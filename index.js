@@ -36,12 +36,13 @@ async function makePTVrequest(baseString, params = {}) {
     let response;
     try {
         response = await axios.get(vars.baseURL + baseString);
+        return response.data;
     }
     catch (e) {
-        console.error("There was an error making the PTV API request:");
-        throw e;
+        console.error("There was an error making the PTV API request:" + e);
+        return {};
     }
-    return response.data;
+
 }
 
 async function getDepartures(routeType, stopId, routeId, params = {}) {
@@ -79,7 +80,7 @@ async function getDirections(directionId, routeType, params = {}) {
 async function getStoppingPatternDetails(runId, routeType, expandList, params = {}) {
     const baseString = `/v3/pattern/run/${runId}/route_type/${routeType}`
     const newParams = {}
-    for ([key,value] in Object.entries(params)) {
+    for (const [key, value] in Object.entries(params)) {
         newParams[key] = value;
     }
     if (expandList) {
@@ -106,6 +107,11 @@ async function getRunsForRoute(routeId, routeType, params = {}) {
 //
 // }
 
+async function getStopInfo(stopId, routeType, params = {}) {
+    const baseString = `/v3/stops/${stopId}/route_type/${routeType}`
+    return makePTVrequest(baseString, params);
+}
+
 async function getStopsForRoute(routeId, routeType, params = {}) {
     const baseString = `/v3/stops/route/${routeId}/route_type/${routeType}`
     return makePTVrequest(baseString, params);
@@ -127,7 +133,7 @@ async function test() {
         { max_results: 5, platform_numbers: [1, 2], }
     );
     console.log(departures);
-    
+
 
 
 
@@ -135,20 +141,51 @@ async function test() {
 
 
 
-    
+
     const search = await getSearchResults("Parkdale Station");
     console.log(search);
 }
 
 async function main() {
+    const MODE_TRAIN = 0;
+    const STOP_PARKDALE = 1154;
 
-    await test()
+    let result = await getDepartures(
+        MODE_TRAIN, STOP_PARKDALE, null,
+        { max_results: 5, platform_numbers: [1], }
+    );
+
+    const runId = result.departures[0].run_id
+
+    const getStopName = async (stop_id) => {
+        const stop_obj = (await getStopInfo(stop_id, 0)).stop
+        return (stop_obj ? stop_obj.stop_name : null)
+    }
+
+    result = await getStoppingPatternDetails(runId, 0, ['stop'])
+    result = await Promise.all(
+        result.departures.map(
+            async (o) => ({
+                name: await getStopName(o.stop_id),
+                sch: new Date(o.scheduled_departure_utc),
+                est: (o.estimated_departure_utc ? new Date(o.estimated_departure_utc) : null),
+            })
+        )
+    );
 
 
+
+
+    return result
 }
 
+const dToS = (d) => (d ? d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2) : null);
 
-main();
+main().then((result) => {
+    console.log(
+        result.map(({name, sch, est}) => (`${name} \t sch ${dToS(sch)} \t est ${dToS(est)}`)).join('\n')
+    );
+});
 
 
 
