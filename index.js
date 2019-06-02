@@ -13,7 +13,7 @@ function generateSignature(request) {
 async function makePTVrequest(baseString, params = {}) {
     // Remove any trailing "/"
     if (baseString[baseString.length - 1] == '/') {
-        baseString = baseString.slice(0,-1)
+        baseString = baseString.slice(0, -1)
     }
 
     baseString += "?devId=" + vars.devId;
@@ -79,23 +79,42 @@ async function main() {
 }
 
 async function getDirectionsForRoute(routeId, params = {}) {
-
+    const baseString = `/v3/directions/route/${routeId}`
+    return makePTVrequest(baseString, params);
 }
 
 async function getDirections(directionId, routeType, params = {}) {
-
+    let baseString = `/v3/directions/${directionId}`
+    if (routeType) {
+        baseString += `/route_type/${routeType}`
+    }
+    return makePTVrequest(baseString, params);
 }
 
 async function getStoppingPatternDetails(runId, routeType, expandList, params = {}) {
+    const baseString = `/v3/pattern/run/${runId}/route_type/${routeType}`
+    const newParams = {}
+    for ([key,value] in Object.entries(params)) {
+        newParams[key] = value;
+    }
+    if (expandList) {
+        newParams["expand"] = expandList;
+    }
+    return makePTVrequest(baseString, params);
 
 }
 
-async function getRoutes(routeId, routeType, params = {}) {
-
+async function getRoutes(routeId, params = {}) {
+    const baseString = `/v3/routes/${routeId}`
+    return makePTVrequest(baseString, params);
 }
 
 async function getRunsForRoute(routeId, routeType, params = {}) {
-
+    let baseString = `/v3/stops/route/${routeId}`
+    if (routeType) {
+        baseString += `/route_type/${routeType}`
+    }
+    return makePTVrequest(baseString, params);
 }
 
 // async function getRuns(runId, routeType, params = {}) {
