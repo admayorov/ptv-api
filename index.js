@@ -10,7 +10,12 @@ function generateSignature(request) {
     return HMAC(request, vars.key);
 }
 
-async function makePTVrequest(baseString, params) {
+async function makePTVrequest(baseString, params = {}) {
+    // Remove any trailing "/"
+    if (baseString[baseString.length - 1] == '/') {
+        baseString = baseString.slice(0,-1)
+    }
+
     baseString += "?devId=" + vars.devId;
     for (const [key, value] of Object.entries(params)) {
         // Some params (e.g. platform_numbers) take arrays as a value and each element 
@@ -28,22 +33,32 @@ async function makePTVrequest(baseString, params) {
     baseString += "&signature=" + generateSignature(baseString);
 
     console.debug(vars.baseURL + baseString)
-    const response = await axios.get(vars.baseURL + baseString);
+    let response;
+    try {
+        response = await axios.get(vars.baseURL + baseString);
+    }
+    catch (e) {
+        console.error("There was an error making the PTV API request:");
+        throw e;
+    }
     return response.data;
 }
 
-async function getDepartures(routeType, stopId, params = {}) {
+async function getDepartures(routeType, stopId, routeId, params = {}) {
     let baseString = "/v3/departures";
 
     // URI parameters:
     baseString += "/route_type/" + routeType;
     baseString += "/stop/" + stopId;
+    if (routeId) {
+        baseString += "/route/" + routeId;
+    }
 
     const result = await makePTVrequest(baseString, params);
     return result;
 }
 
-async function getSearchResults(searchTerm, params={}) {
+async function getSearchResults(searchTerm, params = {}) {
     const baseString = "/v3/search/" + encodeURIComponent(searchTerm)
     return makePTVrequest(baseString, params);
 }
