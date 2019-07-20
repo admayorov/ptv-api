@@ -2,6 +2,7 @@
 
 const local_vars = require('./local_vars');
 const util = require('util');
+const PTV = require('./ptv');
 
 // ----------------------------------------------
 
@@ -60,10 +61,63 @@ async function main() {
     return result
 }
 
-let ptv = new PTV(local_vars);
-ptv.getSearchResults("Murrumbeena", {route_types: ['0']}).then(console.log);    
+function randInt(min, max) {
+    return Math.floor(Math.random() * (max - min + 1)) + min
+}
 
-// const dToS = (d) => (d ? d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2) : null);
+var routeCache = {};
+async function routeIDtoNumber(ptv, id) {
+    const delay = randInt(200,3000)
+    console.log("Waiting for " + delay + " ms")
+    await new Promise(rsv => setTimeout(rsv, delay))
+    let result = routeCache[id];
+    if (result == null || result == undefined) {
+        result = await ptv.getRoutes(id);
+        routeCache[id] = result;
+    }
+
+    return result;
+}
+
+const dToS = (d) => (d ? d.getHours() + ":" + ("0" + d.getMinutes()).slice(-2) : null)
+
+async function nextBusStopDepartures(ptv) {
+
+    let _;
+
+    _ = (await ptv.getSearchResults("Oakleigh Station", { route_types: ['2'] }))
+    _ = _.stops[3]
+
+    _ = (await ptv.getDepartures('2', _.stop_id, null, {date_utc: '2019-07-20T02:00:50Z', max_results: 1}))
+    _ = _.departures
+
+    // _ = _.slice(0,10);
+    _ = await Promise.all(
+        _.map(
+            async (o) => ({
+                r_no : (await routeIDtoNumber(ptv, o.route_id)).route.route_number,
+                time : dToS(new Date(o.scheduled_departure_utc)),
+                est_time: dToS(new Date(o.estimated_departure_utc)),
+            })
+        )
+    )
+
+    _ = _.map(o => `Route ${o.r_no}:     sch ${o.time}  est ${o.est_time}`)
+
+    return _
+    
+}
+
+const ptv = new PTV(local_vars);
+nextBusStopDepartures(ptv).then((data) => {
+    console.log(data);
+    console.log("done")
+})
+
+// let ptv = new PTV(local_vars);
+// ptv.getSearchResults("Murrumbeena", {route_types: ['0']}).then(console.log);  
+
+
 
 // main().then((result) => {
 //     console.log(
